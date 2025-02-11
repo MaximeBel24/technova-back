@@ -1,5 +1,7 @@
 package fr.doranco.ecom_backend.services;
 
+import fr.doranco.ecom_backend.exception.InvalidOperationException;
+import fr.doranco.ecom_backend.exception.ResourceNotFoundException;
 import fr.doranco.ecom_backend.models.Order;
 import fr.doranco.ecom_backend.models.Payment;
 import fr.doranco.ecom_backend.repositories.OrderRepository;
@@ -17,31 +19,32 @@ public class PaymentServiceImpl implements PaymentService{
 
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
-    private final CartService cartService;
 
     @Override
     public Payment processPayment(Long orderId, String method) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Commande non trouvée !"));
+                .orElseThrow(() -> new ResourceNotFoundException("Commande non trouvée avec l'ID : " + orderId));
 
-        if (order.getStatus().equals("paid")) {
-            throw new RuntimeException("Cette commande est déjà payée !");
+        if ("paid".equals(order.getStatus())) {
+            throw new InvalidOperationException("Cette commande est déjà payée !");
         }
 
-        // Simuler un paiement réussi ou échoué
-        String status = Math.random() > 0.2 ? "completed" : "failed"; // 80% de succès, 20% d'échec
+        Optional<Payment> existingPayment = paymentRepository.findByOrder(order);
+        if (existingPayment.isPresent()) {
+            throw new InvalidOperationException("Un paiement existe déjà pour cette commande !");
+        }
 
-        // Créer et enregistrer le paiement
+        String status = Math.random() > 0.2 ? "completed" : "failed";
+
         Payment payment = Payment.builder()
                 .order(order)
-                .amount(calculateTotalAmount(order)) // Calcul du total
+                .amount(calculateTotalAmount(order))
                 .method(method)
                 .status(status)
                 .paymentDate(new Date())
                 .build();
         paymentRepository.save(payment);
 
-        // Mettre à jour le statut de la commande si paiement réussi
         if ("completed".equals(status)) {
             order.setStatus("paid");
             orderRepository.save(order);
@@ -59,7 +62,11 @@ public class PaymentServiceImpl implements PaymentService{
     @Override
     public Optional<Payment> getPaymentByOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Commande non trouvée !"));
-        return paymentRepository.findByOrder(order);
+                .orElseThrow(() -> new ResourceNotFoundException("Commande non trouvée avec l'ID : " + orderId));
+
+        return paymentRepository.findByOrder(order)
+                .or(() -> {
+                    throw new ResourceNotFoundException("Aucun paiement trouvé pour la commande ID : " + orderId);
+                });
     }
 }
