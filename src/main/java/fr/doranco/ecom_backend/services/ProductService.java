@@ -9,9 +9,9 @@ public interface ProductService {
 
     public List<Product> getAllProducts();
 
-    public Optional<Product> getProductById(Long id);
+    public Product getProductById(Long productId);
 
-    public Product saveProduct(Product product);
+    public Product createProduct(Product product);
 
     public Product updateProduct(Long id, Product productDetails);
 

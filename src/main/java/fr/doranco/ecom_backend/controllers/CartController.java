@@ -25,14 +25,15 @@ public class CartController {
     }
 
     @DeleteMapping("/{userId}/remove/{productId}")
-    public ResponseEntity<String> removeProductFromCart(@PathVariable Long userId, @PathVariable Long productId) {
+    public ResponseEntity<Void> removeProductFromCart(@PathVariable Long userId, @PathVariable Long productId) {
         cartService.removeProductFromCart(userId, productId);
-        return ResponseEntity.ok("Produit retiré du panier !");
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{userId}/clear")
-    public ResponseEntity<String> clearCart(@PathVariable Long userId) {
+    public ResponseEntity<Void> clearCart(@PathVariable Long userId) {
         cartService.clearCart(userId);
-        return ResponseEntity.ok("Panier vidé !");
+        return ResponseEntity.noContent().build();
     }
+
 }

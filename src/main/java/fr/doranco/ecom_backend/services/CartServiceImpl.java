@@ -1,5 +1,7 @@
 package fr.doranco.ecom_backend.services;
 
+import fr.doranco.ecom_backend.exception.InvalidOperationException;
+import fr.doranco.ecom_backend.exception.ResourceNotFoundException;
 import fr.doranco.ecom_backend.models.Cart;
 import fr.doranco.ecom_backend.models.CartProduct;
 import fr.doranco.ecom_backend.models.Product;
@@ -22,20 +24,21 @@ public class CartServiceImpl implements CartService{
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
 
+    @Override
     public Cart getCartByUser(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé !"));
-        return cartRepository.findByUser(user)
-                .orElseGet(() -> cartRepository.save(new Cart(null, user, null)));
+        return cartRepository.findByUser(new User(userId, null, null, null, null, null, null, null, null))
+                .orElseThrow(() -> new ResourceNotFoundException("Panier non trouvé pour l'utilisateur ID : " + userId));
     }
 
+    @Override
     public CartProduct addProductToCart(Long userId, Long productId, int quantity) {
         Cart cart = getCartByUser(userId);
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Produit non trouvé !"));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit non trouvé avec l'ID : " + productId));
 
+        // Vérifier que le stock est suffisant
         if (product.getStock() < quantity) {
-            throw new RuntimeException("Stock insuffisant pour le produit : " + product.getName());
+            throw new InvalidOperationException("Stock insuffisant pour le produit : " + product.getName());
         }
 
         Optional<CartProduct> existingCartProduct = cartProductRepository.findByCartAndProduct(cart, product);
@@ -45,7 +48,7 @@ public class CartServiceImpl implements CartService{
             int newQuantity = cartProduct.getQuantity() + quantity;
 
             if (product.getStock() < newQuantity) {
-                throw new RuntimeException("Stock insuffisant pour le produit : " + product.getName());
+                throw new InvalidOperationException("Stock insuffisant pour ajouter " + quantity + " exemplaires de " + product.getName());
             }
 
             cartProduct.setQuantity(newQuantity);
@@ -56,22 +59,26 @@ public class CartServiceImpl implements CartService{
         }
     }
 
+    @Override
     public void removeProductFromCart(Long userId, Long productId) {
         Cart cart = getCartByUser(userId);
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Produit non trouvé !"));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit non trouvé avec l'ID : " + productId));
 
-        cartProductRepository.findByCartAndProduct(cart, product).ifPresent(cartProductRepository::delete);
+        CartProduct cartProduct = cartProductRepository.findByCartAndProduct(cart, product)
+                .orElseThrow(() -> new InvalidOperationException("Le produit n'est pas dans le panier."));
+
+        cartProductRepository.delete(cartProduct);
     }
 
+    @Override
     public void clearCart(Long userId) {
         Cart cart = getCartByUser(userId);
 
-        // Supprime toutes les entrées de CartProduct liées à ce panier
-        cartProductRepository.deleteAll(cartProductRepository.findAllByCart(cart));
+        if (cart.getCartProducts().isEmpty()) {
+            throw new InvalidOperationException("Le panier est déjà vide.");
+        }
 
-        // On vide la liste des produits dans l'objet Cart
-        cart.getCartProducts().clear();
-        cartRepository.save(cart);
+        cartProductRepository.deleteAll(cart.getCartProducts());
     }
 }
