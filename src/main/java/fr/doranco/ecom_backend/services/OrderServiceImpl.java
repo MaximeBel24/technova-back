@@ -1,16 +1,11 @@
 package fr.doranco.ecom_backend.services;
 
-import fr.doranco.ecom_backend.models.Cart;
-import fr.doranco.ecom_backend.models.Order;
-import fr.doranco.ecom_backend.models.OrderProduct;
-import fr.doranco.ecom_backend.models.User;
-import fr.doranco.ecom_backend.repositories.CartProductRepository;
-import fr.doranco.ecom_backend.repositories.CartRepository;
-import fr.doranco.ecom_backend.repositories.OrderProductRepository;
-import fr.doranco.ecom_backend.repositories.OrderRepository;
+import fr.doranco.ecom_backend.models.*;
+import fr.doranco.ecom_backend.repositories.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -20,22 +15,28 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService{
 
+    private final CartService cartService;
     private final OrderRepository orderRepository;
     private final CartRepository cartRepository;
-    private final CartProductRepository cartProductRepository;
+    private final ProductRepository productRepository;
     private final OrderProductRepository orderProductRepository;
 
     public Order createOrder(Long userId) {
-        // Récupère le panier de l'utilisateur
+
         Cart cart = cartRepository.findByUser(new User(userId, null, null, null, null, null, null, null, null))
                 .orElseThrow(() -> new RuntimeException("Panier non trouvé !"));
 
-        // Vérifie si le panier est vide
+
         if (cart.getCartProducts().isEmpty()) {
             throw new RuntimeException("Le panier est vide, impossible de créer une commande.");
         }
 
-        // Créer et sauvegarder la commande immédiatement
+        for (CartProduct cartProduct : cart.getCartProducts()) {
+            if (cartProduct.getProduct().getStock() < cartProduct.getQuantity()) {
+                throw new RuntimeException("Stock insuffisant pour le produit : " + cartProduct.getProduct().getName());
+            }
+        }
+
         final Order order = orderRepository.save(
                 Order.builder()
                         .user(cart.getUser())
@@ -46,19 +47,26 @@ public class OrderServiceImpl implements OrderService{
 
         // Convertir les produits du panier en produits de la commande
         Set<OrderProduct> orderProducts = cart.getCartProducts().stream()
-                .map(cartProduct -> OrderProduct.builder()
-                        .order(order) // Utilisation de `order` qui est maintenant final
-                        .product(cartProduct.getProduct())
-                        .quantity(cartProduct.getQuantity())
-                        .price(cartProduct.getProduct().getPrice()) // Stocke le prix actuel
-                        .build())
+                .map(cartProduct -> {
+                    Product product = cartProduct.getProduct();
+                    product.setStock(product.getStock() - cartProduct.getQuantity()); // 🔥 Décrémenter le stock
+                    productRepository.save(product); // 🔥 Sauvegarder la nouvelle valeur du stock
+
+                    return OrderProduct.builder()
+                            .order(order)
+                            .product(product)
+                            .quantity(cartProduct.getQuantity())
+                            .price(product.getPrice().setScale(2, BigDecimal.ROUND_HALF_UP))
+                            .build();
+                })
                 .collect(Collectors.toSet());
 
         // Sauvegarde les produits de la commande
         orderProductRepository.saveAll(orderProducts);
 
         // Supprime les produits du panier après validation de la commande
-        cartProductRepository.deleteAll(cart.getCartProducts());
+//        cartProductRepository.deleteAll(cart.getCartProducts());
+        cartService.clearCart(userId);
 
         return order;
     }

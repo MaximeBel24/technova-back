@@ -34,11 +34,21 @@ public class CartServiceImpl implements CartService{
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Produit non trouvé !"));
 
+        if (product.getStock() < quantity) {
+            throw new RuntimeException("Stock insuffisant pour le produit : " + product.getName());
+        }
+
         Optional<CartProduct> existingCartProduct = cartProductRepository.findByCartAndProduct(cart, product);
 
         if (existingCartProduct.isPresent()) {
             CartProduct cartProduct = existingCartProduct.get();
-            cartProduct.setQuantity(cartProduct.getQuantity() + quantity);
+            int newQuantity = cartProduct.getQuantity() + quantity;
+
+            if (product.getStock() < newQuantity) {
+                throw new RuntimeException("Stock insuffisant pour le produit : " + product.getName());
+            }
+
+            cartProduct.setQuantity(newQuantity);
             return cartProductRepository.save(cartProduct);
         } else {
             CartProduct newCartProduct = new CartProduct(null, cart, product, quantity);
