@@ -4,7 +4,6 @@ import fr.doranco.ecom_backend.exception.InvalidOperationException;
 import fr.doranco.ecom_backend.exception.ResourceNotFoundException;
 import fr.doranco.ecom_backend.models.Product;
 import fr.doranco.ecom_backend.repositories.ProductRepository;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +29,7 @@ public class ProductServiceImpl implements ProductService{
     }
 
     @Override
-    public Product createProduct(@Valid Product product) {
+    public Product createProduct(Product product) {
         if (product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
             throw new InvalidOperationException("Le prix du produit doit être supérieur à 0.");
         }

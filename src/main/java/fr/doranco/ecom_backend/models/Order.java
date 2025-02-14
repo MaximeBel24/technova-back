@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "`Order`") // "Order" est un mot réservé en SQL, donc on le met entre backticks
+@Table(name = "orders")
 @Getter
 @Setter
 @NoArgsConstructor
