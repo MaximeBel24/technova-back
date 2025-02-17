@@ -1,6 +1,6 @@
 package fr.doranco.ecom_backend.controllers;
 
-import fr.doranco.ecom_backend.dtos.AccountResponseDto;
+import fr.doranco.ecom_backend.dtos.ResponseDto;
 import fr.doranco.ecom_backend.dtos.LoginRequestDto;
 import fr.doranco.ecom_backend.dtos.RegisterRequestDto;
 import fr.doranco.ecom_backend.services.AuthenticationService;
@@ -17,12 +17,14 @@ public class AccountController {
 
 
     @PostMapping("/register")
-    public ResponseEntity<AccountResponseDto> register(@RequestBody RegisterRequestDto request){
+    public ResponseEntity<ResponseDto> register(@RequestBody RegisterRequestDto request){
+        System.out.println("🚀 Requête reçue pour /register : " + request);
         return authenticationService.register(request);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AccountResponseDto> login(@RequestBody LoginRequestDto request){
+    public ResponseEntity<ResponseDto> login(@RequestBody LoginRequestDto request){
+        System.out.println("🚀 Requête reçue pour /login : " + request);
         return authenticationService.login(request);
     }
 

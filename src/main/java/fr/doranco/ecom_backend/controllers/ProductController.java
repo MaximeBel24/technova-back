@@ -1,6 +1,7 @@
 package fr.doranco.ecom_backend.controllers;
 
 import fr.doranco.ecom_backend.models.Product;
+import fr.doranco.ecom_backend.repositories.CategoryRepository;
 import fr.doranco.ecom_backend.services.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import java.util.Optional;
 public class ProductController {
 
     private final ProductService productService;
+    private final CategoryRepository categoryRepository;
 
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {

@@ -19,7 +19,7 @@ import java.util.List;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class AccountServiceImpl implements AccountService, UserDetailsService {
+public class AccountServiceImpl implements AccountService, UserDetailsService{
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -35,13 +35,7 @@ public class AccountServiceImpl implements AccountService, UserDetailsService {
     @Override
     public User addNewUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        Role userRole = new Role(RoleName.USER);
-        ArrayList<Role> roles = new ArrayList<>();
-        roles.add(userRole);
-        addRolesToUser(user, roles);
-
         return userRepository.save(user);
-
     }
 
     @Override
@@ -57,6 +51,6 @@ public class AccountServiceImpl implements AccountService, UserDetailsService {
         roles.stream()
                 .map(Role::getRoleName)
                 .map(roleRepository::findByRoleName)
-                .forEach(user.getRoles()::add);
+                .forEach(userFromDb.getRoles()::add);
     }
 }

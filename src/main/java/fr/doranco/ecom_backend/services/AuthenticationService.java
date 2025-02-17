@@ -1,6 +1,6 @@
 package fr.doranco.ecom_backend.services;
 
-import fr.doranco.ecom_backend.dtos.AccountResponseDto;
+import fr.doranco.ecom_backend.dtos.ResponseDto;
 import fr.doranco.ecom_backend.dtos.LoginRequestDto;
 import fr.doranco.ecom_backend.dtos.RegisterRequestDto;
 import fr.doranco.ecom_backend.enums.RoleName;
@@ -20,7 +20,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -34,10 +33,10 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
 
-    public ResponseEntity<AccountResponseDto> register(RegisterRequestDto request) {
+    public ResponseEntity<ResponseDto> register(RegisterRequestDto request) {
         if(userRepository.findByEmail(request.getEmail()).isPresent()){
             return ResponseEntity.badRequest()
-                    .body(AccountResponseDto.builder()
+                    .body(ResponseDto.builder()
                             .message("Un utilisateur existe déjà avec cette adresse email")
                             .build());
         }
@@ -59,12 +58,12 @@ public class AuthenticationService {
 
         userRepository.save(user);
 
-        return ResponseEntity.ok(AccountResponseDto.builder()
+        return ResponseEntity.ok(ResponseDto.builder()
                 .message("Utilisateur enregistré avec succès")
                 .build());
     }
 
-    public ResponseEntity<AccountResponseDto> login(LoginRequestDto request) {
+    public ResponseEntity<ResponseDto> login(LoginRequestDto request) {
         var user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new UsernameNotFoundException("Utilisateur introubale"));
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -78,7 +77,7 @@ public class AuthenticationService {
 
         return ResponseEntity.ok()
                 .headers(responseHeaders)
-                .body(AccountResponseDto.builder()
+                .body(ResponseDto.builder()
                         .message("Utilisateur authentifié avec succès")
                         .build());
     }

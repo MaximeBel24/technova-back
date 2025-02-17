@@ -19,5 +19,25 @@ public class EcomBackendApplication {
 		SpringApplication.run(EcomBackendApplication.class, args);
 	}
 
+//	@Bean
+//	CommandLineRunner start(AccountService accountService,  UserRepository userRepository){
+//		return args -> {
+//			Role admin = new Role(RoleName.ADMIN);
+//			Role user = new Role(RoleName.USER);
+//
+//			accountService.addNewRole(user);
+//			accountService.addNewRole(admin);
+//
+//			User userToPersist = new User( "admin", "admin", "technovadmin@gmail.com", "1234");
+//			accountService.addNewUser(userToPersist);
+//
+//			ArrayList<Role> roles = new ArrayList<>();
+//			roles.add(user);
+//			roles.add(admin);
+//			accountService.addRolesToUser(userToPersist, roles);
+//
+//		};
+//	}
+
 
 }

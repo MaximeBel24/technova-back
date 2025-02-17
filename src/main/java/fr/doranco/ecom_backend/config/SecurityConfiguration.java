@@ -1,10 +1,12 @@
 package fr.doranco.ecom_backend.config;
 
 import fr.doranco.ecom_backend.security.JwtAuthFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -24,9 +26,20 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
 
-        http.csrf(AbstractHttpConfigurer::disable)
+        http.exceptionHandling(e -> e
+                .authenticationEntryPoint((request, response, authException) -> {
+                    System.out.println("❌ ACCESS DENIED: " + request.getRequestURI());
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                })
+        );
+
+        http.cors(Customizer.withDefaults())
+                .csrf(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
-//                .authorizeHttpRequests(request -> request.requestMatchers("technova/**").permitAll())
+                .authorizeHttpRequests(request -> request.anyRequest().permitAll())
+//                .authorizeHttpRequests(request -> request.requestMatchers("/account/**").permitAll())
+//                .authorizeHttpRequests(request -> request.requestMatchers("/categories/**").permitAll())
+//                .authorizeHttpRequests(request -> request.requestMatchers("/products/**").permitAll())
 //                .authorizeHttpRequests(request -> request.requestMatchers("api/v1/admin/**").hasAuthority("ADMIN"))
 //                .authorizeHttpRequests(request -> request.requestMatchers("api/v1/user/**").hasAuthority("USER"))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

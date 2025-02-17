@@ -1,5 +1,7 @@
 package fr.doranco.ecom_backend.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,6 +29,12 @@ public class Product {
 
     private Integer stock;
 
-    @Column(length = 255)
+    @Lob
     private String imageUrl;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false)
+    @JsonBackReference
+    @JsonProperty("category")
+    private Category category;
 }

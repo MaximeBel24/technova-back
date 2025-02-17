@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collections;
 
 @Component
 @RequiredArgsConstructor
@@ -48,6 +49,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
         }
 
+        System.out.println("🔍 JWT FILTER INTERCEPTED REQUEST: " + request.getRequestURI());
+        System.out.println("🔍 Headers: " + Collections.list(request.getHeaderNames()));
+
+
         filterChain.doFilter(request, response);
+
     }
 }

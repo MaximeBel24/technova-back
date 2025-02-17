@@ -2,9 +2,13 @@ package fr.doranco.ecom_backend.services;
 
 import fr.doranco.ecom_backend.exception.InvalidOperationException;
 import fr.doranco.ecom_backend.exception.ResourceNotFoundException;
+import fr.doranco.ecom_backend.models.Category;
 import fr.doranco.ecom_backend.models.Product;
+import fr.doranco.ecom_backend.repositories.CategoryRepository;
 import fr.doranco.ecom_backend.repositories.ProductRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -16,6 +20,8 @@ import java.util.Optional;
 public class ProductServiceImpl implements ProductService{
 
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+
 
     @Override
     public List<Product> getAllProducts() {
@@ -30,20 +36,20 @@ public class ProductServiceImpl implements ProductService{
 
     @Override
     public Product createProduct(Product product) {
-        if (product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new InvalidOperationException("Le prix du produit doit être supérieur à 0.");
+        Optional<Category> category = categoryRepository.findById(product.getCategory().getId());
+
+        if (category.isEmpty()) {
+            throw new RuntimeException("Category not found");
         }
-        if (product.getStock() < 0) {
-            throw new InvalidOperationException("Le stock ne peut pas être négatif.");
-        }
-        if (product.getName() == null || product.getName().trim().isEmpty()) {
-            throw new InvalidOperationException("Le nom du produit ne peut pas être vide.");
-        }
-        if (product.getDescription() == null || product.getDescription().trim().isEmpty()) {
-            throw new InvalidOperationException("La description du produit ne peut pas être vide.");
-        }
-        return productRepository.save(product);
+
+        product.setCategory(category.get());
+        Product savedProduct = productRepository.save(product);
+
+        // 🔥 Recharger le produit depuis la BDD pour éviter les problèmes de persistance
+        return productRepository.findById(savedProduct.getId())
+                .orElseThrow(() -> new RuntimeException("Product could not be saved"));
     }
+
 
 
     @Override
